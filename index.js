@@ -1,21 +1,27 @@
-const functions = require("firebase-functions");
+const express = require("express");
+const cors = require("cors");
 const { RtcTokenBuilder, RtcRole } = require("agora-token");
 
-// Reemplazá con tu App ID y App Certificate de Agora
+const app = express();
+const port = process.env.PORT || 3000;
+
+app.use(cors());
+
+// Reemplazá con tus credenciales de Agora
 const APP_ID = "fde50799f5e047ea8ece980d13685649";
 const APP_CERTIFICATE = "5a8c6eb8e7ec437e8acc5debb2159f79";
 
-exports.generateAgoraToken = functions.https.onRequest((req, res) => {
-  // Para simplificar, usaremos los query params para recibir channelName y uid
+// Ruta para generar el token
+app.get("/generate-agora-token", (req, res) => {
   const channelName = req.query.channelName;
-  const uid = req.query.uid || 0; // uid puede ser 0 (invitado) o un número
-  const role = RtcRole.PUBLISHER; // roles: PUBLISHER o SUBSCRIBER
-  const expirationTimeInSeconds = 3600; // token válido 1 hora
+  const uid = req.query.uid || 0;
+  const role = RtcRole.PUBLISHER;
+  const expirationTimeInSeconds = 3600;
   const currentTimestamp = Math.floor(Date.now() / 1000);
   const privilegeExpiredTs = currentTimestamp + expirationTimeInSeconds;
 
   if (!channelName) {
-    return res.status(400).send("Falta channelName");
+    return res.status(400).json({ error: "Falta channelName" });
   }
 
   try {
@@ -31,6 +37,11 @@ exports.generateAgoraToken = functions.https.onRequest((req, res) => {
     return res.json({ token });
   } catch (error) {
     console.error("Error generando token:", error);
-    return res.status(500).send("Error generando token");
+    return res.status(500).json({ error: "Error generando token" });
   }
+});
+
+// Iniciar el servidor
+app.listen(port, () => {
+  console.log(`Servidor Express escuchando en el puerto ${port}`);
 });
